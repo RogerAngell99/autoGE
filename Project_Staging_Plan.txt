@@ -1,0 +1,181 @@
+A Framework for Recording and Simulating User Interactions in Graphical Environments: A Case Study with RuneScape's Grand Exchange
+
+This plan outlines a systematic, phased approach to developing a script capable of recording and simulating user interactions within a graphical application, specifically focusing on the Grand Exchange interface in RuneScape. The primary objective is to capture human-generated input patterns—mouse movements, clicks, and keyboard presses—associated with specific in-game actions, and then to replicate these actions in a manner that emulates human behavior. The plan emphasizes modularity, extensibility, and testability, and is informed by best practices in automation, configuration management, and data analysis.
+
+Stage 1: Project Scaffolding and Environment Setup
+Objective: Establish a robust, modular project structure and a reproducible development environment. This includes creating a clear directory hierarchy, configuration files, and dependency management, ensuring the project is organized and all dependencies are in place before writing any core logic. The use of a Python virtual environment and externalized configuration (config.ini) is emphasized for maintainability and portability.
+
+Tasks:
+
+Create Project Directory Structure:
+Based on the provided architecture, create the full directory tree:
+runescape_ge_automation/
+├── main.py
+├── config.ini
+├── core/
+│   ├── __init__.py
+│   ├── command_parser.py
+│   ├── recorder.py
+│   ├── simulator.py
+│   ├── state_manager.py
+│   └── hotkey_manager.py
+├── patterns/
+├── utils/
+│   ├── __init__.py
+│   └── window_utils.py
+├── requirements.txt
+└── README.md
+Populate requirements.txt:
+Add the necessary libraries:
+pynput
+pyautogui
+pygetwindow
+Configure config.ini:
+Create the configuration file with initial placeholder paths and settings:
+Ini, TOML
+
+[Paths]
+suggested_actions = C:\path\to\your\suggested_actions.txt
+patterns_directory = ./patterns/
+
+[Hotkeys]
+pause_resume = <control>+<alt>+p
+
+[Simulation]
+default_mouse_duration = 0.5
+timing_randomness_factor = 0.15
+Establish Virtual Environment:
+Create and activate a Python virtual environment to isolate project dependencies.
+Verification and Testing:
+
+Test 1 (Environment Check): From within the activated virtual environment, run pip install -r requirements.txt. The command must complete successfully without any errors.
+Test 2 (Dependency Import Test): Create a temporary test_imports.py file. Add import pynput, import pyautogui, and import pygetwindow. Run the script. It must execute without any ModuleNotFoundError.
+Test 3 (Configuration Read Test): In a temporary script, use Python's configparser to read the suggested_actions path from config.ini. Print the value and verify it matches the placeholder path.
+Stage 2: Core Event Recording
+Objective: Implement the fundamental logic for capturing low-level mouse and keyboard events using pynput, associating them with specific commands, and saving them to a structured, extensible JSON format. The design should support accurate timing, event type differentiation, and future extensibility (e.g., context images, modifier keys). Emphasis is placed on capturing data in a way that supports both replay and future analysis or ML.
+
+Tasks:
+
+Implement Recorder Logic (core/recorder.py):
+Use pynput.mouse.Listener and pynput.keyboard.Listener to capture events (on_move, on_click, on_press, on_release).
+For each event, create a dictionary containing type, time_offset_ms (relative to the start of the recording), and relevant details (e.g., x, y, button, key).
+Store these event dictionaries in a list.
+Develop Saving Mechanism:
+Create a function that takes the list of recorded events and saves it as a JSON file in the patterns/ directory. The filename should be based on the action being recorded (e.g., test_record_1.json).
+Verification and Testing:
+
+Test 1 (Manual Recording Test): Write a simple script that starts the recording, waits for the user to press 'Esc' to stop, and then saves the file.
+Run the script.
+Move the mouse in a square shape, click the left mouse button, and type "hello".
+Press 'Esc'.
+Test 2 (File Verification): Open the generated JSON file.
+Verify that it is a valid JSON.
+Check if it contains a list of event objects.
+Confirm the presence of mouse_move, mouse_click_press, mouse_click_release, key_press, and key_release events corresponding to your actions.
+Ensure each event has a time_offset_ms key with a positive numerical value.
+Stage 3: Basic Deterministic Simulation
+Objective: Develop a simulation engine that can replay a recorded event sequence from a JSON file accurately, using PyAutoGUI. The initial focus is on deterministic, linear replay, establishing a baseline for later enhancements. The architecture should allow for easy integration of more advanced, human-like simulation features in subsequent stages.
+
+Tasks:
+
+Implement Simulator Logic (core/simulator.py):
+Create a function that loads a specified JSON pattern file.
+Iterate through the events list in the JSON data.
+Use a time.sleep() call to wait for the time_offset_ms between each event.
+Use pyautogui functions (moveTo, click, press, etc.) to execute the action described in each event object.
+Verification and Testing:
+
+Test 1 (Simulation Replay Test):
+Use the JSON file generated in Stage 2 (test_record_1.json).
+Open a blank text editor on your screen.
+Run a script that loads and simulates the pattern.
+Test 2 (Behavior Verification):
+Observe the screen. The mouse cursor must trace the same square path you recorded.
+The script must perform a left-click.
+The text "hello" must be typed into the text editor.
+The timing and sequence of events should visually match your original recording.
+Stage 4: Integration of Control Systems
+Objective: Integrate the recorder and simulator with a central state machine, command parser, and hotkey controls. This stage introduces robust state management (IDLE, RECORDING, SIMULATING, PAUSED), command-to-function mapping, and global hotkey handling for pause/resume. The design should support concurrent file monitoring and hotkey listening, with clear state transitions and error handling.
+
+Tasks:
+
+Implement Command Parser (core/command_parser.py):
+Create a function that reads the file path from config.ini, opens suggested_actions.txt, and parses lines to extract the command (e.g., "Buy an item") and parameters (e.g., box_id).
+Implement State Manager (core/state_manager.py):
+Define the script's states: IDLE, RECORDING, SIMULATING, PAUSED.
+Create functions to transition the script between these states.
+Implement Hotkey Manager (core/hotkey_manager.py):
+Use pynput.keyboard.HotKey to set up a global listener for the pause/resume key combination defined in config.ini.
+The hotkey's callback function should trigger a state change in the state_manager.
+Orchestrate in main.py:
+Create the main application loop.
+The loop continuously checks suggested_actions.txt for new commands.
+When a new command appears:
+If a pattern for it doesn't exist, switch state to RECORDING.
+If a pattern exists, switch state to SIMULATING.
+The loop respects the current state (e.g., does nothing if PAUSED).
+Verification and Testing:
+
+Test 1 (Command Parsing Unit Test): Test the command_parser function with sample input strings like "Buy an item [box_1]" and "Wait [5000]". Verify it correctly returns the action and its parameter.
+Test 2 (Recording Flow):
+Delete any existing patterns.
+Add a new command "Buy an item [test_item]" to suggested_actions.txt.
+Run main.py. The script should log that it's entering the RECORDING state.
+Perform an action.
+Test 3 (Simulation Flow):
+Stop the script (a graceful stop mechanism should be added, e.g., another hotkey). A pattern buy_item_test_item.json (or similar) should now exist.
+Add the same command "Buy an item [test_item]" to the file again.
+Run main.py. The script should log that it's entering the SIMULATING state and replay the recorded action.
+Test 4 (Hotkey Test): While the script is either recording or simulating, press the pause/resume hotkey. The script should log the PAUSED and subsequent RECORDING/SIMULATING state changes and visibly halt and resume its operation.
+Stage 5: Enhancing Simulation with Human-like Variations
+Objective: Refine the simulation by introducing randomized variations and more natural mouse movements to better emulate human behavior. This includes using PyAutoGUI's tweening functions, randomizing timings and click positions, and (optionally) integrating advanced mouse path libraries. The goal is to make automation statistically closer to genuine human input, reducing the likelihood of detection.
+
+Tasks:
+
+Modify core/simulator.py:
+When calling pyautogui.moveTo(), use the duration parameter. Set its value to a baseline from config.ini plus/minus a small random amount.
+Incorporate a pyautogui.ease* tweening function (e.g., pyautogui.easeInOutQuad) into mouse movements to simulate acceleration and deceleration.
+Before executing a click, add a small, random offset (e.g., +/- 1-3 pixels) to the target coordinates.
+When handling delays with time.sleep(), add a small random variation based on the timing_randomness_factor from config.ini.
+Verification and Testing:
+
+Test 1 (Observational Test): Record a single, long, straight mouse movement. Run the simulation for this pattern 5-10 times in a row.
+Test 2 (Behavior Verification):
+Visually confirm that the mouse does not move at a constant, linear speed. It should appear to accelerate and slow down.
+Confirm that the path and final click position are slightly different with each run.
+Confirm that the total time for the action varies slightly on each execution.
+Stage 6: Robustness, Window Targeting, and Error Handling
+Objective: Make the script resilient to common issues such as the game window not being in focus, corrupted data files, or unexpected errors. This includes window targeting with PyGetWindow, comprehensive error handling, and logging. The system should fail gracefully, log issues, and recover to a safe state without crashing or sending inputs to the wrong window.
+
+Tasks:
+
+Implement Window Utilities (utils/window_utils.py):
+Use pygetwindow to create functions to find_window_by_title('RuneScape') and activate_window().
+Integrate Window Logic:
+In main.py, before starting any simulation, call the utility function to find and activate the RuneScape window.
+Add Error Handling:
+Wrap file I/O operations in try...except blocks to handle FileNotFoundError or JSON parsing errors.
+If the RuneScape window is not found, the script should log an error and wait, rather than crashing or controlling the wrong window.
+Add comprehensive logging throughout the application to trace its state and diagnose issues.
+Verification and Testing:
+
+Test 1 (Window Found): Open a text document and have the game client open. Run the script. It should activate the game window before simulating actions.
+Test 2 (Window Not Found): Close the game client. Run the script. It must not crash. Check the logs to confirm it reported that the window could not be found and entered a waiting or idle state.
+Test 3 (Corrupted Pattern Test): Manually edit a saved .json file and introduce a syntax error (e.g., a missing comma). Attempt to simulate that action. The script should log the JSON error and skip the action gracefully instead of crashing.
+Stage 7 (Advanced): Data Analysis and Pattern Generation
+Objective: Leverage the collected data for analysis and lay the groundwork for machine learning-based pattern generation. This includes feature engineering, clustering, and (optionally) sequence modeling or generative approaches. The architecture should support easy integration of new data and continuous improvement of simulation quality.
+
+Tasks:
+
+Create an Analysis Script (analysis/data_processor.py):
+Write a script that can iterate through all JSON files in the patterns/ directory.
+Implement feature engineering: for each recorded action, calculate metrics like total duration, average mouse speed, path straightness (Euclidean distance vs. path length), and number of clicks.
+Explore Data with ML:
+Use a library like scikit-learn to perform basic clustering (e.g., K-Means) on multiple recordings of the same action. This can help identify different "styles" or variations in how the user performs a task.
+Verification and Testing:
+
+Test 1 (Feature Extraction): Run the analysis script. Print the calculated features for a few known patterns. Manually verify if the numbers seem plausible (e.g., a longer, more complex mouse path has a lower straightness score and higher duration).
+Test 2 (Clustering Sanity Check):
+Record one action (e.g., "Sell item [box_3]") three times: once very quickly and directly, once slowly and meanderingly, and once at a normal pace.
+Run the clustering algorithm on these three patterns.
+The test is successful if the clustering can distinguish between these different performance styles, for example, by assigning them to different clusters. This verifies that the engineered features are meaningful. 

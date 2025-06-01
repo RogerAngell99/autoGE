@@ -1,0 +1,26 @@
+runescape_ge_automation/
+├── .gitignore
+├── Project_Staging_Plan.txt
+├── README.md
+├── config.ini
+├── core
+|   ├── __init__.py
+|   ├── command_parser.py
+|   ├── hotkey_manager.py
+|   ├── patterns
+|   |   └── Buy an item_6_20250601_174120.json
+|   ├── recorder.py
+|   ├── simulator.py
+|   └── state_manager.py
+├── main.py
+├── patterns
+├── project_tree.txt
+├── requirements.txt
+├── suggested_actions.txt
+├── test_mouse_recording.py
+├── tests
+|   └── test_environment.py
+├── tree.py
+└── utils
+    ├── __init__.py
+    └── window_utils.py
